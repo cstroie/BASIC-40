@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BASIC Interpreter</title>
     <meta name="theme-color" content="#16130f">
     <meta name="description" content="Classic 8-bit BASIC interpreter with a 40x24 CRT screen.">
@@ -52,7 +55,8 @@
             font-size: 10px;
             line-height: 1.6;
             min-height: 100vh;
-            padding: 24px 16px 32px;
+            padding: calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+                     calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
         }
 
         .wrap { max-width: 1120px; margin: 0 auto; }
@@ -301,12 +305,47 @@
         }
 
         @media (max-width: 560px) {
-            body { padding: 16px 12px 24px; }
+            body {
+                padding: calc(16px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+                         calc(24px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+            }
             .bezel { padding: 12px 12px 8px; border-radius: 12px; }
             .crt { padding: 10px; border-radius: 10px; }
             .keyboard { grid-template-columns: repeat(4, 1fr); }
             .toolbar .spacer { display: none; }
             select { flex: 1 1 100%; }
+        }
+
+        .update {
+            position: fixed;
+            left: 50%;
+            top: calc(12px + env(safe-area-inset-top));
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px 8px 16px;
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            color: var(--ink);
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .update[hidden] { display: none; }
+
+        .update button {
+            font: inherit;
+            letter-spacing: 1px;
+            color: var(--page);
+            background: var(--accent);
+            border: 0;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -672,6 +711,35 @@
                 if (e.key === 'Escape') breakProgram();
             });
 
+            // ---- key click (synthesized, no asset) ----
+            let clickCtx = null;
+            function click() {
+                try {
+                    clickCtx = clickCtx || new (window.AudioContext || window.webkitAudioContext)();
+                    if (clickCtx.state === 'suspended') clickCtx.resume();
+                    const t = clickCtx.currentTime, len = Math.floor(clickCtx.sampleRate * 0.012);
+                    const buf = clickCtx.createBuffer(1, len, clickCtx.sampleRate), data = buf.getChannelData(0);
+                    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+                    const src = clickCtx.createBufferSource(), filt = clickCtx.createBiquadFilter(), gain = clickCtx.createGain();
+                    src.buffer = buf; filt.type = 'bandpass'; filt.frequency.value = 3000; filt.Q.value = 1.2;
+                    gain.gain.value = 0.35;
+                    src.connect(filt).connect(gain).connect(clickCtx.destination);
+                    src.start(t);
+                } catch (_) { /* audio unavailable */ }
+                if (navigator.vibrate) navigator.vibrate(8);
+            }
+            document.addEventListener('click', e => { if (e.target.closest('button')) click(); }, true);
+
+            // Installed app not already fullscreen (old install, shortcut, other browser):
+            // request it on a tap, since browsers only allow that from a user gesture.
+            const installed = () => matchMedia('(display-mode: standalone), (display-mode: minimal-ui)').matches;
+            document.addEventListener('pointerup', () => {
+                const el = document.documentElement;
+                if (installed() && !document.fullscreenElement && el.requestFullscreen) {
+                    el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+                }
+            });
+
             crt.addEventListener('click', () => {
                 if (!window.getSelection().toString()) cmd.focus();
             });
@@ -876,9 +944,41 @@
             })();
         })();
     </script>
+    <div class="update" id="update" role="status" hidden>
+        UPDATE AVAILABLE <button id="updateBtn" type="button">RELOAD</button>
+    </div>
     <script>
         if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-            navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is optional */ });
+            const banner = document.getElementById('update');
+            let reloading = false;
+
+            // A new worker is installed and waiting: offer the update.
+            const offer = worker => {
+                banner.hidden = false;
+                document.getElementById('updateBtn').onclick = () => worker.postMessage('SKIP_WAITING');
+            };
+
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (reloading) return;
+                reloading = true;
+                location.reload();
+            });
+
+            navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+                // On the very first visit there is no controller yet, so nothing to update.
+                if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+                reg.addEventListener('updatefound', () => {
+                    const w = reg.installing;
+                    w.addEventListener('statechange', () => {
+                        if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w);
+                    });
+                });
+                // Long-lived tabs and installed apps: look for updates periodically and on return.
+                const check = () => reg.update().catch(() => {});
+                setInterval(check, 60 * 60 * 1000);
+                document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+                window.addEventListener('online', check);
+            }).catch(() => { /* offline support is optional */ });
         }
     </script>
 </body>

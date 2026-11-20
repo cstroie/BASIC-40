@@ -61,7 +61,7 @@ The menu on the page has eleven built-in programs, including Graphics & Colour a
 
 ## Install and offline use
 
-The page is a Progressive Web App. Your browser offers to install it (on a phone, use **Add to Home Screen**). After the first visit it also works offline: a service worker (`sw.js`) caches the app and refreshes it in the background, so updates appear on the next visit.
+The page is a Progressive Web App. Your browser offers to install it (on a phone, use **Add to Home Screen**). After the first visit it also works offline: a service worker (`sw.js`) caches the app and refreshes it in the background. When a new version is ready, an **UPDATE AVAILABLE** banner offers to reload. Installed, it runs fullscreen. On-screen buttons give a soft key click and, on phones, a short haptic tap.
 
 ## Layout
 

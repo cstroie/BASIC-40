@@ -4,7 +4,8 @@
   "description": "Classic 8-bit BASIC interpreter with a 40x24 CRT screen.",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#16130f",
   "theme_color": "#16130f",
   "icons": [
