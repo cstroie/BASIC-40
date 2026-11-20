@@ -6,7 +6,7 @@ A classic 8-bit style BASIC interpreter that runs entirely in the browser. It ha
 
 **Live demo: https://cstroie.github.io/basic/**
 
-![The Mandelbrot example running on the CRT screen](docs/screenshot.png)
+<img src="docs/screenshot-phone.png" alt="The graphics example running on a phone" width="320">
 
 ## Usage
 
