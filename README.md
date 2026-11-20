@@ -1,10 +1,10 @@
 # BASIC-40 Interpreter
 
-[![test](https://github.com/cstroie/basic/actions/workflows/test.yml/badge.svg)](https://github.com/cstroie/basic/actions/workflows/test.yml)
+[![test](https://github.com/cstroie/BASIC-40/actions/workflows/test.yml/badge.svg)](https://github.com/cstroie/BASIC-40/actions/workflows/test.yml)
 
 A classic 8-bit style BASIC interpreter that runs entirely in the browser. It has a 40×24 character CRT screen with green, amber and white phosphor themes. There are no dependencies and no build step.
 
-**Live demo: https://cstroie.github.io/basic/**
+**Live demo: https://cstroie.github.io/BASIC-40/**
 
 <img src="docs/screenshot-phone.png" alt="The graphics example running on a phone" width="320">
 
@@ -20,6 +20,7 @@ Open `index.html` in a browser. No server or build step is needed.
 - **OPEN** / **DOWNLOAD** read and write `.bas` files. You can also drop a `.bas` file on the screen.
 - The current program is saved automatically and restored on your next visit.
 - **SHARE** copies a link with the program packed into the address. Opening the link loads that program.
+- On-screen buttons give a short click, and a tiny vibration on phones that support it.
 
 ## Language
 
@@ -61,7 +62,7 @@ The menu on the page has eleven built-in programs, including Graphics & Colour a
 
 ## Install and offline use
 
-The page is a Progressive Web App. Your browser offers to install it (on a phone, use **Add to Home Screen**). After the first visit it also works offline: a service worker (`sw.js`) caches the app and refreshes it in the background. When a new version is ready, an **UPDATE AVAILABLE** banner offers to reload. Installed, it runs fullscreen. On-screen buttons give a soft key click and, on phones, a short haptic tap.
+The page is a Progressive Web App. Your browser offers to install it (on a phone, use **Add to Home Screen**). After the first visit it also works offline: a service worker (`sw.js`) caches the app and refreshes it in the background. When a new version is ready, an **UPDATE AVAILABLE** banner offers to reload. Installed, it runs fullscreen, using the whole screen around notches and rounded corners.
 
 ## Layout
 
